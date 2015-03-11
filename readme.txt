@@ -19,7 +19,7 @@ It is a free, cleaned-up version of the plugin updates server that has been prov
 
 The best way to get a feel for its features is to take a look at the available screenshots.
 
-== Features ==
+= Features =
 
 * Manage multiple plugins
 
