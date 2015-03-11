@@ -19,7 +19,7 @@ It is a free, cleaned-up version of the plugin updates server that has been prov
 
 The best way to get a feel for its features is to take a look at the available screenshots.
 
-== Features ==
+= Features =
 
 * Manage multiple plugins
 
@@ -54,6 +54,7 @@ Or
 After installation, you will want to configure this plugin. To find its settings, look for the "Plugins Manager" entry in your WordPress dashboard menu.
 
 To show users on your website what plugins they can download, use this shortcode (changing the value of userid to match the ID of the WordPress user who is providing the plugins): [udmanager showunpurchased="free" userid="1"]
+
 
 == Frequently Asked Questions ==
 
