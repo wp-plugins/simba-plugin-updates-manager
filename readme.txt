@@ -1,7 +1,7 @@
 === Simba Plugin Updates Manager ===
 Contributors: DavidAnderson
 Requires at least: 3.1
-Tested up to: 4.1
+Tested up to: 4.2
 Stable tag: 1.4.0
 Tags: plugin updates, updates server, wordpress updates, wordpress plugin updates
 License: MIT
