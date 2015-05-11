@@ -2,7 +2,7 @@
 Contributors: DavidAnderson
 Requires at least: 3.1
 Tested up to: 4.2
-Stable tag: 1.4.0
+Stable tag: 1.4.3
 Tags: plugin updates, updates server, wordpress updates, wordpress plugin updates
 License: MIT
 Donate link: http://david.dw-perspective.org.uk/donate
@@ -62,7 +62,16 @@ None yet.
 
 == Changelog ==
 
-= 1.4.0 - 2015-03-1 =
+= 1.4.3 - 2015-05-11 =
+
+* FIX: Now displays correct download numbers again on WP 4.2+
+* FEATURE: If the uploaded plugin contains a changelog (either within a WordPress-format readme.txt, or as changelog.txt), then this is automatically parsed and included with the plugin information. If the readme.txt contains an FAQ section, then this is included likewise.
+* TWEAK: Add udmanager_manage_permission filter, allowing the capability needed to perform operations filterable.
+* TWEAK: Return HTTPS urls for downloads when the original request was over HTTPS
+* TWEAK: Better error handling in various places in the zip download process
+* TWEAK: When zip file creation fails (Premium), set the HTTP status code to 500
+
+= 1.4.0 - 2015-03-01 =
 
 * RELEASE: First public release. Supports hosting + providing updates for free plugins, with multiple versions and download rules.
 
@@ -95,4 +104,4 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 == Upgrade Notice ==
-* 1.4.0 : Initial release
+* 1.4.3 : Parsing of readme file and display in relevant sections in site's update information; also fix display of download numbers in WP 4.2+

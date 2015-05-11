@@ -8,6 +8,8 @@ if(!class_exists('WP_List_Table')) require_once( ABSPATH.'wp-admin/includes/clas
 
 class UpdraftManager_List_Table extends WP_List_Table {
 
+	private $ud_downloads = false;
+
 	public function get_columns(){
 	$columns = array(
 		'cb' => '<input type="checkbox" />',
@@ -57,10 +59,10 @@ class UpdraftManager_List_Table extends WP_List_Table {
 		case 'description':
 			return $item[ $column_name ];
 		case 'downloads':
-			if (!isset($this->downloads)) $this->downloads = get_user_meta(get_current_user_id(), 'udmanager_downloads', true);
-			if (!is_array($this->downloads) || empty($this->downloads[$item['slug']])) return 0;
+			if ($this->ud_downloads === false) $this->ud_downloads = get_user_meta(get_current_user_id(), 'udmanager_downloads', true);
+			if (!is_array($this->ud_downloads) || empty($this->ud_downloads[$item['slug']])) return 0;
 			$total = 0;
-			foreach ($this->downloads[$item['slug']] as $fn) {
+			foreach ($this->ud_downloads[$item['slug']] as $fn) {
 				if (is_array($fn)) {
 					foreach ($fn as $dl) {
 						$total += $dl;

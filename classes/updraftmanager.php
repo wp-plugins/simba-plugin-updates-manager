@@ -73,7 +73,6 @@ class Updraft_Manager {
 		if (method_exists($this->plugin, 'pinfo_'.$action)) call_user_func(array($this->plugin, 'pinfo_'.$action));
 
 		die();
-
 	}
 
 	public function udmanager_shortcode($atts) {
@@ -88,6 +87,7 @@ class Updraft_Manager {
 #			'slug' => apply_filters('updraftmanager_defaultslug', false),
 
 #		if (false === $slug) return '';
+
 		# TODO: When going fully multi-user... which userid to show? All of them?
 		if (false === $userid) return '';
 

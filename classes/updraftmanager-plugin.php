@@ -133,7 +133,7 @@ class Updraft_Manager_Plugin {
 
 	// This function, if ever changed, should be kept in sync with the same function in updraftplus-addons.php
 	// Returns either false or an array
-	private function get_addon_info($file) {
+	protected function get_addon_info($file) {
 		if ($f = fopen($file, 'r')) {
 			$key = "";
 			$name = "";
@@ -213,19 +213,6 @@ class Updraft_Manager_Plugin {
 
 	}
 
-	// Returns an array of all top-level files, except for 'addons' and <plugin>.php
-	public function get_zip_files($dir, $pluginfile) {
-		$file_list = array();
-		if ($handle = opendir($dir)) {
-			while (false !== ($entry = readdir($handle))) {
-				if ($entry != '.' && $entry != '..' && $entry != $this->addonsdir && $entry != $pluginfile) {
-					$file_list[] = $dir.'/'.$entry;
-				}
-			}
-		}
-		return $file_list;
-	}
-
 	// Valid types: OK, ERR, BADAUTH, INVALID
 	public function send_response($type, $data = null, $msg = null) {
 		switch ($type) {
@@ -280,7 +267,16 @@ class Updraft_Manager_Plugin {
 				if (!in_array($titlement['key'], $ent_keys)) $ent_keys[] = $titlement['key'];
 			}
 		}
-		$this->deliver_zip($download_info['download'], $ent_keys, $download_info['pluginfile']);
+
+		$deliver = $this->deliver_zip($download_info['download'], $ent_keys, $download_info['pluginfile']);
+
+		if (is_wp_error($deliver)) {
+			error_log("Zip delivery failed: ".$deliver->get_error_message());
+			header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+		} elseif (!$deliver) {
+			error_log("Zip delivery failed");
+			header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+		}
 
 		// TODO: Check this out, see if it's still true. The number of transients being stored can get high, so if we can get rid of them, it would be good.
 		// We don't delete or change the expiration time of the transient, because the tokens are not unique (it may be re-used)
@@ -296,13 +292,17 @@ class Updraft_Manager_Plugin {
 
 		$this->pluginfile = $pluginfile;
 
+		global $updraft_manager;
+
 		$manager_dir = UpdraftManager_Options::get_manager_dir(false, $this->uid);
-		if (false === $manager_dir) return false;
+		if (false === $manager_dir || !$updraft_manager->manager_dir_exists($manager_dir)) return false;
 
 		$version = empty($this->plugin['zips'][$filename]['version']) ? '' : $this->plugin['zips'][$filename]['version'];
 		$versionsuffix = $version;
 
-		$cache_file = apply_filters('updraftmanager_plugin_deliverzip_cachefile', $cache_file = $manager_dir.'/'.$filename, $keys, $manager_dir, $version, $versionsuffix);
+		$cache_file = apply_filters('updraftmanager_plugin_deliverzip_cachefile', $manager_dir.'/'.$filename, $keys, $manager_dir, $version, $versionsuffix);
+
+		if (is_wp_error($cache_file)) return $cache_file;
 
 		if (!file_exists($cache_file)) return false;
 
@@ -320,6 +320,7 @@ class Updraft_Manager_Plugin {
 		header('Content-Length: '.filesize($cache_file));
 		readfile($cache_file);
 		
+		return true;
 	}
 
 	public function pinfo_listaddons() {
@@ -369,7 +370,6 @@ class Updraft_Manager_Plugin {
 		# TODO: Get real URL
 		$mother = home_url('');
 		$full_url = (0 === strpos($shopurl, 'http:/') || 0 === strpos($shopurl, 'https:/')) ? $shopurl : $mother.$shopurl;
-
 		$blurb = '';
 
 		if ($in_use_on_sites) {
@@ -422,7 +422,7 @@ ENDHERE;
 		$email = isset($_GET['e']) ? strtolower($_GET['e']) : '';
 		#$pass = isset($_GET['p']) ? @base64_decode($_GET['p']) : '';
 		$sid = isset($_GET['sid']) ? $_GET['sid'] : '';
-		$ssl = (isset($_GET['ssl']) && $_GET['ssl']==1) ? true : false;
+		$ssl = ((isset($_GET['ssl']) && $_GET['ssl']) || (!isset($_GET['ssl']) && is_ssl())) ? true : false;
 		$site_url = isset($_GET['su']) ? @base64_decode($_GET['su']) : '';
 		$si = isset($_GET['si']) ? maybe_unserialize(@base64_decode($_GET['si'])) : '';
 
@@ -441,6 +441,7 @@ ENDHERE;
 			'slug' => $this->slug,
 			'author' => $this->author,
 			'homepage' => $this->homepage,
+			'sections' => array()
 		);
 
 		# No need to authenticate them - the SID is sufficient authentication. Also, if they changed their p/w, then authentication will fail
@@ -550,6 +551,60 @@ ENDHERE;
 
 			if (!empty($download['filename'])) $unpacked_dir = UpdraftManager_Options::get_manager_dir(false, $this->uid).'/_up_'.$download['filename'];
 
+			$transient_name = 'spm_readme_secs_'.substr(md5($unpacked_dir), 0, 12);
+			$sections_from_readme = get_transient($transient_name);
+
+			if (is_array($sections_from_readme) && !empty($sections_from_readme)) {
+
+				$plugin_info['sections'] = $sections_from_readme;
+
+			} else {
+
+	// 			$sections_grokked = array('changelog' => '', 'frequently asked questions' => '', 'installation' => '', 'screenshots' => '');
+				$sections_grokked = array('changelog' => '', 'frequently asked questions' => '');
+				if (isset($unpacked_dir)) {
+					if (is_readable($unpacked_dir.'/'.$this->slug.'/readme.txt')) {
+						$readme_lines = file($unpacked_dir.'/'.$this->slug.'/readme.txt');
+						$current_section = false;
+						$how_many_divisions = 0;
+						foreach ($readme_lines as $cl) {
+							if (preg_match('/^==(.*)==\s+$/', $cl, $matches)) {
+								$current_section = strtolower(trim($matches[1]));~
+								$how_many_divisions = 0;
+							} elseif (isset($sections_grokked[$current_section])) {
+								if ('changelog' == $current_section && ($how_many_divisions > 4 || $sections_grokked[$current_section] > 10240)) continue;
+								if (preg_match('/^=(.*)=\s+$/', $cl, $matches)) {
+									$how_many_divisions++;
+									$sections_grokked[$current_section] .= '<h4><strong>'.$matches[1].'</strong></h4>';
+									if ($how_many_divisions > 4 && 'changelog' == $current_section) $sections_grokked[$current_section] .= "\n...";
+								} else {
+									$sections_grokked[$current_section] .= $cl;
+								}
+							}
+						}
+					}
+					if (empty($sections_grokked['changelog']) && is_readable($unpacked_dir.'/'.$this->slug.'/changelog.txt')) {
+						$sections_grokked['changelog'] = file_get_contents($unpacked_dir.'/'.$this->slug.'/changelog.txt');
+					}
+					//$plugin_info['sections']['changelog'] = ...
+				}
+
+				$sections_grokked['faq'] = $sections_grokked['frequently asked questions'];
+				unset($sections_grokked['frequently asked questions']);
+
+				foreach ($sections_grokked as $section => $content) {
+					if (empty($content)) continue;
+					if (!function_exists('Markdown')) require_once(UDMANAGER_DIR.'/vendor/php-markdown-extra/markdown.php');
+					$plugin_info['sections'][$section] = Markdown($content);
+				}
+
+				$sections_from_readme = $plugin_info['sections'];
+
+				set_transient($transient_name, $sections_from_readme, 86400);
+
+			}
+			
+
 			if (!$this->free && !empty($this->addonsdir) && isset($unpacked_dir) && !empty($download['version'])) {
 				$all_addons = false;
 				foreach ($user_addons as $addon) {
@@ -622,7 +677,7 @@ ENDHERE;
 
 		}
 
-		$plugin_info['sections'] = array('description' => $description);
+		$plugin_info['sections']['description'] = $description;
 
 		if (empty($plugin_version) && !empty($_REQUEST['installed_version'])) $plugin_version = $_REQUEST['installed_version'];
 
@@ -797,7 +852,7 @@ ENDHERE;
 							$in_use_on_sites .= "<strong>".sprintf(__('Expired updates subscription (%s)', 'updraftmanager'), $expires)."</strong>";
 						}
 					} elseif ('unclaimed' == $useradd['site']) {
-						$in_use_on_sites .= apply_filters('updraftmanager_unactivatedpurchase', "<strong>".__('You have an unactivated purchase', 'updraftmanager')."</strong>");
+						$in_use_on_sites .= apply_filters('updraftmanager_unactivatedpurchase', "<strong>".__('You have an available licence', 'updraftmanager')."</strong>");
 					} elseif ('unlimited' == $useradd['site']) {
 						$in_use_on_sites .= "<strong>".__('Active:', 'updraftmanager').'</strong> '.__('unlimited entitlement.','updraftmanager');
 					} else {
@@ -837,7 +892,7 @@ ENDHERE;
 						'mustbeloggedin' => ($this->free) ? false : true
 					), 7*86400);
 
-					$ssl = false;
+					$ssl = is_ssl();
 
 					# The final parameter is because WordPress uses the URL to construct a temporary directory using basename($url), which can be long and risk overflowing 256-character limits (e.g. on WAMP)
 					$plugin_download_url = apply_filters('updraftmanager_downloadbase', home_url('', ($ssl) ? 'https' : 'http'), $ssl).'/?udm_action=download&slug='.$this->slug.'&muid='.$this->uid.'&token='.$token.'&ig=/'.substr(md5(time()),0,8);

@@ -9,6 +9,7 @@ if(!class_exists('WP_List_Table')) require_once( ABSPATH.'wp-admin/includes/clas
 class UpdraftManager_Zips_Table extends WP_List_Table {
 
 	private $plug_slug;
+	private $ud_downloads = false;
 
 	function __construct($slug) {
 		// Not entirely sure why this double-save is needed; seems like somewhere after WP 4.1, $this->slug started getting over-written
@@ -76,10 +77,10 @@ class UpdraftManager_Zips_Table extends WP_List_Table {
 		case 'version':
 			return $item[$column_name];
 		case 'downloads':
-			if (!isset($this->downloads)) $this->downloads = get_user_meta(get_current_user_id(), 'udmanager_downloads', true);
-			if (!is_array($this->downloads) || empty($this->downloads[$this->plug_slug][$item['filename']])) return 0;
+			if (false === $this->ud_downloads) $this->ud_downloads = get_user_meta(get_current_user_id(), 'udmanager_downloads', true);
+			if (!is_array($this->ud_downloads) || empty($this->ud_downloads[$this->plug_slug][$item['filename']])) return 0;
 			$total = 0;
-			foreach ($this->downloads[$this->plug_slug][$item['filename']] as $dl) {
+			foreach ($this->ud_downloads[$this->plug_slug][$item['filename']] as $dl) {
 				$total += $dl;
 			}
 			return $total;

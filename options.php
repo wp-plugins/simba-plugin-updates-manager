@@ -82,7 +82,7 @@ class UpdraftManager_Options {
 	}
 
 	public static function manage_permission() {
-		return 'manage_options';
+		return apply_filters('udmanager_manage_permission', 'manage_options');
 	}
 
 	public function ajax_handler() {

@@ -4,7 +4,7 @@ Plugin Name: Simba Plugins Manager
 Plugin URI: https://www.simbahosting.co.uk
 Description: Management of plugin updates + licences
 Author: David Anderson
-Version: 1.4.0
+Version: 1.4.3
 License: GPLv2+ / MIT
 Text Domain: updraftmanager
 Author URI: http://david.dw-perspective.org.uk
@@ -12,7 +12,7 @@ Author URI: http://david.dw-perspective.org.uk
 
 if (!defined('ABSPATH')) die('No direct access.');
 
-define('UDMANAGER_VERSION', '1.4.0');
+define('UDMANAGER_VERSION', '1.4.3');
 define('UDMANAGER_DIR', dirname(realpath(__FILE__)));
 define('UDMANAGER_URL', plugins_url('', realpath(__FILE__)));
 define('UDMANAGER_SLUG', basename(UDMANAGER_DIR));
@@ -21,7 +21,7 @@ define('UDMANAGER_SLUG', basename(UDMANAGER_DIR));
 
 Some of these are out of date/no longer issues - needs pruning
 
-Lots of PHP warnings when visiting: http://localhost/ud/wp-admin/admin.php?page=updraftmanager_add_new (maybe somethign not copied correctly from /home/david/MissionaryHosting/UpdraftPlus/web-22may14/wp-content/plugins/simba-plugin-manager/ ?)
+Lots of PHP warnings when visiting: http://localhost/ud/wp-admin/admin.php?page=updraftmanager_add_new (maybe somethign not copied correctly from web-22may14/wp-content/plugins/simba-plugin-manager/ ?)
 
 POST-LAUNCH:
 
@@ -31,13 +31,9 @@ Reset uninstalled licences
 
 Check that the weekly cache-cleaning code is working.
 
-Write code for an updates checker: 1) For completely free plugins, and 2) For no-addons plugins. For addons, point them to UD.
-Incorporate the updates checker into the plugin itself.
-Also provide the shell scripts
-
 Allow re-claiming of an entitlement on the same URL / different sid (i.e. handle re-installs). Test this.
 
-Need to provide the admin's management interface for entitlements.
+Admin's management interface for entitlements: make more sophisticated. Switch alert for jQuery, and provide precise dates, not just by month.
 
 Future/post-selling (stuff that is nice to have):
 
@@ -50,8 +46,6 @@ Need a link to allow the user to extend his entitlement (i.e. allow site owner t
 Provide a manual button to purge the cache.
 
 Provide statistics on how many actively accessing sites (using the updraftmanager_plugins usermeta data) + the spread of PHP/WP/plugin versions they are using
-
-Parse changelogs in readme.txt or changelog.txt
 
 Should go in Connector: Add option, for each user, to add their plugin license info to the My Account WC page. Useful snippet:
 add_action('woocommerce_after_available_downloads', 'my_woocommerce_after_available_downloads');
